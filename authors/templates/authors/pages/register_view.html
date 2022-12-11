@@ -1,0 +1,13 @@
+{% extends 'global/base.html' %}
+
+{% block title %}Register |{% endblock title %}
+
+{% block content %}
+    <div class="main-content center container">
+        <h2>Register</h2>
+        <h3>Visits: {{ request.session.number }}</h3>
+    </div>
+
+    {% include 'global/partials/messages.html' %}
+    {% include 'global/partials/form.html' %}
+{% endblock content %}
