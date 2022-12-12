@@ -1,6 +1,6 @@
 from django.http import Http404
 from django.shortcuts import get_list_or_404, get_object_or_404, render
-from django.db.models import Q
+from django.db.models import Q, F, Value
 from recipes.models import Recipe
 from utils.recipes.pagination import make_pagination
 import os
@@ -8,6 +8,8 @@ from django.views.generic import ListView, DetailView
 from django.http import JsonResponse
 from django.forms.models import model_to_dict
 from django.core.exceptions import ObjectDoesNotExist
+from django.db.models.aggregates import Count, Sum, Avg
+from django.db.models.functions import Concat
 
 PER_PAGE = int(os.environ.get('PER_PAGE', 3))
 
@@ -18,18 +20,33 @@ def theory(request, *args, **kwargs):
     # except ObjectDoesNotExist:
     #     recipes = None
 
-    recipes = Recipe.objects.filter(
-        Q(
-            title__icontains='da',
-            id__gt=2,
-            is_published=True,) |
-        Q(
-            id__gt=10000
+    # recipes = Recipe.objects.filter(
+    #     Q(
+    #         title__icontains='da',
+    #         id__gt=2,
+    #         is_published=True,) |
+    #     Q(
+    #         id__gt=10000
+    #     )
+    # )
+
+    # recipes = Recipe.objects.filter(
+    #     id=F('author__id'),
+    # )[:10]
+
+    # recipes = Recipe.objects.values('id', 'title')
+    recipes = Recipe.objects.all().annotate(
+        author_full_name=Concat(
+            F('author__first_name'), Value(' '),
+            F('author__last_name'), Value(' ('),
+            F('author__username'), Value(')')
         )
     )
+    number_of_recipes = recipes.aggregate(number=Count('id'))
     
     context = {
-        'recipes': recipes
+        'recipes': recipes,
+        'number_of_recipes': number_of_recipes['number']
     }
 
     return render(
