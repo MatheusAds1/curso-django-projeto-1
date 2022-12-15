@@ -4,6 +4,8 @@ from django.urls import reverse
 from django.utils.text import slugify
 from django.contrib.contenttypes.fields import GenericRelation
 from tag.models import Tag
+from collections import defaultdict
+from django.forms import ValidationError
 
 
 class Category(models.Model):
@@ -51,3 +53,20 @@ class Recipe(models.Model):
             self.slug = slug
 
         return super().save(*args, **kwargs)
+
+
+def clean(self, *args, **kwargs):
+        error_messages = defaultdict(list)
+
+        recipe_from_db = Recipe.objects.filter(
+            title__iexact=self.title
+        ).first()
+
+        if recipe_from_db:
+            if recipe_from_db.pk != self.pk:
+                error_messages['title'].append(
+                    'Found recipes with the same title'
+                )
+
+        if error_messages:
+            raise ValidationError(error_messages)
